@@ -1,19 +1,27 @@
 import 'dart:convert';
 
 import 'package:agora_rtm/agora_rtm.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'agora_rtm_message_model.dart';
 
 class AgoraRtmUtils {
+  static String agoraKey = '7252774b1b1c48a6bfb61ef72ed9e71a';
+
   static AgoraRtmClient _client;
-  static bool isLogin = true;
+
+   bool _isLogin = false;
+
+ //获取实例
+static OverlayState overlayState ;
+
 
   /// Agora 初始化
   static Future<AgoraRtmClient> getAgoraRtmClient() async {
     if (_client == null) {
       _client = await AgoraRtmClient.createInstance(
-          '7252774b1b1c48a6bfb61ef72ed9e71a');
+          agoraKey);
     }
     return _client;
   }
@@ -41,11 +49,11 @@ class AgoraRtmUtils {
   static String getAgoraMsgType(int type) {
     switch (type) {
       case 1:
-        return "CALLVIDEO";
+        return "call_video";
       case 2:
-        return "CANCEL_VIDEO";
+        return "cancel_video";
       case 3:
-        return "REFUSE_VIDEO";
+        return "refuse_video";
       default:
         return "";
     }
@@ -53,8 +61,9 @@ class AgoraRtmUtils {
 
   /// 声网RTM初始化、注册接收
   Future initAgoraRtm() async {
-    if (isLogin) {
+    if (!_isLogin) {
       /// 没有登录不能初始化
+      Fluttertoast.showToast(msg: '请先登录');
       return;
     }
     // 初始化
@@ -95,8 +104,9 @@ class AgoraRtmUtils {
   /// 登录rtm
   loginAgoraRtm(String str) async {
     try {
-      await _client.login(null, str);
-      print('AgoraRtm登录成功');
+     var loginresutl =  await _client.login(null, str+'10086');
+     _isLogin = true;
+      print('AgoraRtm登录======>$loginresutl');
     } catch (e) {
       // reason;  code;
       print('AgoraRtm登录错误: ${e.toString()}');
@@ -114,6 +124,7 @@ class AgoraRtmUtils {
 
   ///退出rtm
   logoutAgoraRtm() {
+    _isLogin = false;
     _client.logout();
   }
 
@@ -144,7 +155,7 @@ class AgoraRtmUtils {
   }
 
   /// 请求视频通话
-  static sendVideoCallMsg(String receivId) async {
+  static sendVideoCallMsg(BuildContext context, String receivId) async {
     bool isonline = await queryPeerOnlineStatus(receivId);
     if (isonline) {
       print('对方不在线');
